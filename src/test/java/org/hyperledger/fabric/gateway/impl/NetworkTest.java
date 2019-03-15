@@ -9,10 +9,10 @@ package org.hyperledger.fabric.gateway.impl;
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.Channel;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class NetworkTest {
@@ -21,7 +21,7 @@ public class NetworkTest {
 
     @Before
     public void beforeEach() throws Exception {
-        gateway = TestUtils.instance().newGatewayBuilder().connect();
+        gateway = TestUtils.getInstance().newGatewayBuilder().connect();
         network = gateway.getNetwork("ch1");
     }
 
@@ -77,5 +77,21 @@ public class NetworkTest {
         }
     }
 
-
+//    @Test
+//    public void testGetTransactionEventSource() {
+//        BlockEvent.TransactionEvent txEvent = Mockito.mock(BlockEvent.TransactionEvent.class);
+//
+//        BlockEvent blockEvent = Mockito.mock(BlockEvent.class);
+//        Mockito.doReturn(Arrays.asList(txEvent)).when(blockEvent).getTransactionEvents();
+//
+//        TransactionListener listener = Mockito.mock(TransactionListener.class);
+//
+//        try (StubBlockEventSource stubBlockSource = new StubBlockEventSource()) {
+//            TransactionEventSource transactionSource = network.getTransactionEventSource();
+//            transactionSource.addTransactionListener(listener);
+//            stubBlockSource.sendEvent(blockEvent);
+//        }
+//
+//        Mockito.verify(listener).receivedTransaction(txEvent);
+//    }
 }
