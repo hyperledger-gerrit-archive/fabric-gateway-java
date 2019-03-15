@@ -28,7 +28,7 @@ public class FileSystemWalletTest extends WalletTest {
 
   @Test
   public void testCreateFolder() throws Exception {
-    // create a wallet instance for non-existing folder
+    // create a wallet getInstance for non-existing folder
     Path tempDir = basePath.getRoot().toPath().resolve("temp");
     Wallet existing = Wallet.createFileSystemWallet(tempDir);
   }

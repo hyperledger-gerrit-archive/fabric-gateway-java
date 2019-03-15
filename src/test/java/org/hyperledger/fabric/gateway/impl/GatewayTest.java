@@ -9,9 +9,9 @@ package org.hyperledger.fabric.gateway.impl;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class GatewayTest {
@@ -19,7 +19,7 @@ public class GatewayTest {
 
     @Before
     public void beforeEach() throws Exception {
-        builder = TestUtils.instance().newGatewayBuilder();
+        builder = TestUtils.getInstance().newGatewayBuilder();
     }
 
     @Test

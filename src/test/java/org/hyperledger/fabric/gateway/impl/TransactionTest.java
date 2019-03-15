@@ -11,7 +11,7 @@ import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
 import org.hyperledger.fabric.gateway.Gateway;
 import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.gateway.TestUtils;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -47,7 +47,7 @@ public class TransactionTest {
 
         request = mock(TransactionProposalRequest.class);
 
-        Gateway gateway = TestUtils.instance().newGatewayBuilder()
+        Gateway gateway = TestUtils.getInstance().newGatewayBuilder()
                 .client(client)
                 .commitHandler(DefaultCommitHandlers.NONE)
                 .connect();
