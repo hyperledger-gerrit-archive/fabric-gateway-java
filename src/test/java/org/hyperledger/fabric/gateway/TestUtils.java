@@ -12,6 +12,7 @@ import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
+import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -45,7 +46,9 @@ public final class TestUtils {
         GatewayImpl.Builder builder = (GatewayImpl.Builder)Gateway.createBuilder();
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("user", Wallet.Identity.createIdentity("msp1", certificate, privateKey));
-        builder.identity(wallet, "user").networkConfig(networkConfigPath);
+        builder.identity(wallet, "user").networkConfig(networkConfigPath)
+                // Fake query handler so things work out-of-the-box
+                .queryHandler(network -> (query -> newSuccessfulProposalResponse(new byte[0])));
         return builder;
     }
 
@@ -53,6 +56,12 @@ public final class TestUtils {
         Peer mockPeer = Mockito.mock(Peer.class);
         Mockito.doReturn(name).when(mockPeer).getName();
         return mockPeer;
+    }
+
+    public Channel newMockChannel(String name) {
+        Channel mockChannel = Mockito.mock(Channel.class);
+        Mockito.doReturn(name).when(mockChannel).getName();
+        return mockChannel;
     }
 
     public BlockEvent.TransactionEvent newValidMockTransactionEvent(Peer peer, String transactionId) {
