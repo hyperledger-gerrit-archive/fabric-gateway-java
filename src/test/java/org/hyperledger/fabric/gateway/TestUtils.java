@@ -12,6 +12,7 @@ import org.hyperledger.fabric.gateway.impl.GatewayImpl;
 import org.hyperledger.fabric.gateway.impl.event.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeResponse;
+import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -25,6 +26,7 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
+import java.util.EnumSet;
 
 public final class TestUtils {
     private static final TestUtils INSTANCE = new TestUtils();
@@ -45,7 +47,17 @@ public final class TestUtils {
         GatewayImpl.Builder builder = (GatewayImpl.Builder)Gateway.createBuilder();
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("user", Wallet.Identity.createIdentity("msp1", certificate, privateKey));
-        builder.identity(wallet, "user").networkConfig(networkConfigPath);
+        builder.identity(wallet, "user")
+                .networkConfig(networkConfigPath)
+                // Simple query handler so things work out-of-the-box
+                .queryHandler(network -> (query -> {
+                    Peer peer = network.getChannel().getPeers(EnumSet.of(Peer.PeerRole.CHAINCODE_QUERY)).iterator().next();
+                    ProposalResponse response = query.evaluate(peer);
+                    if (!response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
+                        throw new GatewayException(response.getMessage());
+                    }
+                    return response;
+                }));
         return builder;
     }
 
@@ -53,6 +65,12 @@ public final class TestUtils {
         Peer mockPeer = Mockito.mock(Peer.class);
         Mockito.doReturn(name).when(mockPeer).getName();
         return mockPeer;
+    }
+
+    public Channel newMockChannel(String name) {
+        Channel mockChannel = Mockito.mock(Channel.class);
+        Mockito.doReturn(name).when(mockChannel).getName();
+        return mockChannel;
     }
 
     public BlockEvent.TransactionEvent newValidMockTransactionEvent(Peer peer, String transactionId) {
