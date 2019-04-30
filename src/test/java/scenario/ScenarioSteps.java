@@ -164,7 +164,7 @@ public class ScenarioSteps implements En {
 	}
 
 	private static void exec(String command) throws Exception {
-		System.out.println(command);
+		System.err.println(command);
 		Process process = Runtime.getRuntime().exec(command);
 		int exitCode = process.waitFor();
 
@@ -175,7 +175,7 @@ public class ScenarioSteps implements En {
 
 		String line;
 		while ((line = br.readLine()) != null) {
-			System.out.println(line);
+			System.err.println(line);
 		}
 
 		assertEquals(exitCode, 0);
