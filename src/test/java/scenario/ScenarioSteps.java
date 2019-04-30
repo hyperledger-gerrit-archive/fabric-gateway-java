@@ -164,7 +164,7 @@ public class ScenarioSteps implements En {
 	}
 
 	private static void exec(String command) throws Exception {
-		System.out.println(command);
+		System.err.println(command);
 		Process process = Runtime.getRuntime().exec(command);
 		int exitCode = process.waitFor();
 
@@ -175,7 +175,7 @@ public class ScenarioSteps implements En {
 
 		String line;
 		while ((line = br.readLine()) != null) {
-			System.out.println(line);
+			System.err.println(line);
 		}
 
 		assertEquals(exitCode, 0);
@@ -198,8 +198,19 @@ public class ScenarioSteps implements En {
 
 	private static void createCryptoMaterial() throws Exception {
 		File fixtures = Paths.get("src", "test", "fixtures").toFile();
+		System.err.println(fixtures.getAbsolutePath());
 		Process process = Runtime.getRuntime().exec("sh generate.sh", null, fixtures);
 		int exitCode = process.waitFor();
+		// get STDERR for the process and print it
+		InputStream is = process.getErrorStream();
+		InputStreamReader isr = new InputStreamReader(is);
+		BufferedReader br = new BufferedReader(isr);
+
+		String line;
+		while ((line = br.readLine()) != null) {
+			System.err.println(line);
+		}
+
 		assertEquals(exitCode, 0);
 	}
 
