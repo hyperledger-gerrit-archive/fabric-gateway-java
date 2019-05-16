@@ -1,0 +1,7 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+2: Andrew Coleman <andrew_coleman@uk.ibm.com>
+Submitted-by: Andrew Coleman <andrew_coleman@uk.ibm.com>
+Submitted-at: Thu, 16 May 2019 08:21:16 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/31382
+Project: fabric-gateway-java
+Branch: refs/heads/master
