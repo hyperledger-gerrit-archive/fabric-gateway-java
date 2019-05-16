@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.hyperledger.fabric.gateway.spi;
+package org.hyperledger.fabric.gateway;
 
 import org.hyperledger.fabric.sdk.BlockEvent;
 
