@@ -6,7 +6,10 @@
 
 package org.hyperledger.fabric.gateway;
 
+import org.hyperledger.fabric.gateway.spi.ContractListener;
+
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Pattern;
 
 /**
  * Represents a smart contract instance in a network.
@@ -58,4 +61,19 @@ public interface Contract {
 	 * @throws GatewayException
 	 */
 	byte[] evaluateTransaction(String name, String... args) throws GatewayException;
+
+	/**
+	 * Add a listener to receive contract events emitted by transactions. The listener is only notified of events
+	 * with names matching the given pattern.
+	 * @param eventName Event name pattern.
+	 * @param listener A contract listener.
+	 * @return The contract listener argument.
+	 */
+	ContractListener addContractListener(Pattern eventName, ContractListener listener);
+
+	/**
+	 * Remove a previously registered contract listener.
+	 * @param listener A contract listener.
+	 */
+	void removeContractListener(ContractListener listener);
 }

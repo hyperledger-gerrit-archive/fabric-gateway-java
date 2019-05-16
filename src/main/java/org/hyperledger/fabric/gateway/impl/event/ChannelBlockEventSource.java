@@ -19,11 +19,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * This implementation is thread-safe.
  * </p>
  */
-public final class BlockEventSourceImpl implements BlockEventSource {
+public final class ChannelBlockEventSource implements BlockEventSource {
     private final Map<BlockListener, String> handleMap = new ConcurrentHashMap<>();
     private final Channel channel;
 
-    BlockEventSourceImpl(Channel channel) {
+    ChannelBlockEventSource(Channel channel) {
         this.channel = channel;
     }
 
@@ -54,8 +54,7 @@ public final class BlockEventSourceImpl implements BlockEventSource {
         try {
             channel.unregisterBlockListener(handle);
         } catch (InvalidArgumentException e) {
-            // Throws if channel has been shutdown
-            throw new IllegalStateException(e);
+            // Ignore to ensure close() never throws
         }
     }
 
