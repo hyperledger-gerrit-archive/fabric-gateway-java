@@ -6,7 +6,7 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.gateway.spi.BlockListener;
+import org.hyperledger.fabric.gateway.BlockListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
@@ -17,14 +17,15 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
-public class BlockEventSourceImplTest {
+public class ChannelBlockEventSourceTest {
     private Channel channel;
-    private BlockEventSourceImpl blockEventSource;
-    private final HashMap<String, org.hyperledger.fabric.sdk.BlockListener> channelListenerMap = new HashMap<>();
+    private ChannelBlockEventSource blockEventSource;
+    private final Map<String, org.hyperledger.fabric.sdk.BlockListener> channelListenerMap = new HashMap<>();
 
     @BeforeEach
     public void beforeEach() throws Exception {
@@ -36,10 +37,11 @@ public class BlockEventSourceImplTest {
             return handle;
         });
         when(channel.unregisterBlockListener(any())).thenAnswer(invocation -> {
-            return channelListenerMap.remove(invocation.getArgument(0)) != null;
+            String handle = invocation.getArgument(0);
+            return channelListenerMap.remove(handle) != null;
         });
 
-        blockEventSource = new BlockEventSourceImpl(channel);
+        blockEventSource = new ChannelBlockEventSource(channel);
     }
 
     @AfterEach
@@ -49,7 +51,7 @@ public class BlockEventSourceImplTest {
 
     private void fireBlockEvent(BlockEvent event) {
         List<org.hyperledger.fabric.sdk.BlockListener> listeners = new ArrayList<>(channelListenerMap.values());
-        listeners.forEach(channelListener -> channelListener.received(event));
+        listeners.forEach(listener -> listener.received(event));
     }
 
     @Test
@@ -63,7 +65,7 @@ public class BlockEventSourceImplTest {
         BlockListener listener = blockEventSource.addBlockListener(blockEvent -> {});
         blockEventSource.removeBlockListener(listener);
 
-        verify(channel).unregisterBlockListener(any());
+        verify(channel).unregisterBlockListener(any(String.class));
     }
 
     @org.junit.jupiter.api.Test
@@ -93,10 +95,12 @@ public class BlockEventSourceImplTest {
 
     @Test
     public void does_not_throw_if_channel_unregister_throws() throws Exception {
-        reset(channel);
-        when(channel.unregisterBlockListener(any())).thenThrow(InvalidArgumentException.class);
+        BlockListener listener = blockEventSource.addBlockListener(blockEvent -> {});
 
-        blockEventSource.addBlockListener(blockEvent -> {});
+        reset(channel);
+        when(channel.unregisterBlockListener(any(String.class))).thenThrow(InvalidArgumentException.class);
+
+        blockEventSource.removeBlockListener(listener);
     }
 
     @Test
