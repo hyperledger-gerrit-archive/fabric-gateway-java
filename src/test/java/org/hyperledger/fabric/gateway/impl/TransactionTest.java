@@ -51,7 +51,7 @@ public class TransactionTest {
         channel = testUtils.newMockChannel("channel");
         when(channel.sendTransaction(anyCollection(), any(Channel.TransactionOptions.class)))
                 .thenReturn(CompletableFuture.completedFuture(null));
-        when(channel.getPeers(any())).thenReturn(Arrays.asList(peer));
+        when(channel.getPeers(any())).thenReturn(Collections.singletonList(peer));
 
         HFClient client = mock(HFClient.class);
         when(client.getChannel(anyString())).thenReturn(channel);
