@@ -48,7 +48,7 @@ timestamps { // set the timestamps on the jenkins console
         }
 
     // Publish jar files from merge job
-    if (env.JOB_TYPE == "merge") {
+    if (env.JOB_TYPE == "verify") {
       publishJar()
       apiDocs()
    } else {
