@@ -7,7 +7,7 @@
 # Get the version from pom.xml
 cd $WORKSPACE/$BASE_DIR
 version_check=$(cat pom.xml | grep "version" | grep -c "SNAPSHOT")
-version=$(xmllint --xpath "//*[local-name()='project']/*[local-name()='version']/text()" pom.xml)
+version=$(cat pom.xml | grep '<version>' | awk -F '[<>]' '/version/{print $3; exit;}')
 
 if [ $version_check -gt 0 ]; then
 
