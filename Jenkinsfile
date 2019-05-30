@@ -48,7 +48,7 @@ timestamps { // set the timestamps on the jenkins console
         }
 
     // Publish jar files from merge job
-    if (env.JOB_TYPE == "merge") {
+    if (env.JOB_TYPE == "verify") {
       publishJar()
       apiDocs()
    } else {
@@ -88,7 +88,7 @@ def publishJar() {
     sh 'echo "-------> Publish Jar files"'
     def ROOTDIR = pwd()
     configFileProvider([
-      configFile(fileId: 'fabric-gateway-java-settings', variable: 'SETTINGS_FILE'),
+      configFile(fileId: 'fabric-chaincode-java-settings', variable: 'SETTINGS_FILE'),
       configFile(fileId: 'global-settings', variable: 'GLOBAL_SETTINGS_FILE')]) {
 
     try {
