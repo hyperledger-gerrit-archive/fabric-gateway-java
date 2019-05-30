@@ -24,7 +24,7 @@ if [ $version_check -gt 0 ]; then
           -Durl=https://nexus.hyperledger.org/content/repositories/snapshots/ \
           -DgroupId=org.hyperledger.fabric-gateway-java \
           -Dversion=$artifacts\
-          -DartifactId=fabric-gateway-java \
+          -DartifactId=fabric-gateway-artifacts \
           -DgeneratePom=true \
           -DuniqueVersion=false \
           -Dpackaging=jar \
