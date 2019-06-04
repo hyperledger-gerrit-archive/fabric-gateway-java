@@ -71,10 +71,10 @@ public class GatewayBuilderTest {
         Wallet wallet = Wallet.createInMemoryWallet();
         wallet.put("admin", Wallet.Identity.createIdentity("msp1", enrollment.getCertificate(), enrollment.getPrivateKey()));
         builder.identity(wallet, "admin");
-        Path yamlPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.json");
+        Path yamlPath = Paths.get("src", "test", "java", "org", "hyperledger", "fabric", "gateway", "connection.yaml");
         builder.networkConfig(yamlPath);
         try (Gateway gateway = builder.connect()) {
-            assertThat(((GatewayImpl)gateway).getNetworkConfig().get().getClientOrganization().getMspId()).isEqualTo("Org1MSP");
+            assertThat(((GatewayImpl)gateway).getNetworkConfig().getClientOrganization().getMspId()).isEqualTo("Org1MSP");
         }
     }
 
