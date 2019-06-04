@@ -6,21 +6,6 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.json.Json;
-import javax.json.JsonReader;
-import javax.json.stream.JsonParsingException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
@@ -44,11 +29,24 @@ import org.hyperledger.fabric.sdk.identity.X509Enrollment;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 
+import javax.json.Json;
+import javax.json.JsonReader;
+import javax.json.stream.JsonParsingException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 public class GatewayImpl implements Gateway {
     private static final Log LOG = LogFactory.getLog(Gateway.class);
 
     private final HFClient client;
-    private final Optional<NetworkConfig> networkConfig;
+    private final NetworkConfig networkConfig;
     private final Identity identity;
     private final Map<String, Network> networks = new HashMap<>();
     private final CommitHandlerFactory commitHandlerFactory;
@@ -137,7 +135,7 @@ public class GatewayImpl implements Gateway {
             if (builder.client != null) {
                 this.client = builder.client;
                 this.identity = null;
-                this.networkConfig = Optional.empty();
+                this.networkConfig = null;
             } else {
                 if (builder.identity == null) {
                     throw new GatewayException("The gateway identity must be set");
@@ -148,7 +146,7 @@ public class GatewayImpl implements Gateway {
                 this.client = HFClient.createNewInstance();
                 CryptoSuite cryptoSuite = CryptoSuiteFactory.getDefault().getCryptoSuite();
                 this.client.setCryptoSuite(cryptoSuite);
-                this.networkConfig = Optional.of(builder.ccp);
+                this.networkConfig = builder.ccp;
                 this.identity = builder.identity;
                 configureUserContext();
             }
@@ -209,9 +207,9 @@ public class GatewayImpl implements Gateway {
         Network network = networks.get(networkName);
         if (network == null) {
             Channel channel = client.getChannel(networkName);
-            if (channel == null && networkConfig.isPresent()) {
+            if (channel == null && networkConfig != null) {
                 try {
-                    channel = client.loadChannelFromConfig(networkName, networkConfig.get());
+                    channel = client.loadChannelFromConfig(networkName, networkConfig);
                 } catch (InvalidArgumentException | NetworkConfigurationException ex) {
                     LOG.info("Unable to load channel configuration from connection profile: ", ex);
                 }
@@ -254,9 +252,4 @@ public class GatewayImpl implements Gateway {
     public boolean isDiscoveryEnabled() {
         return discovery;
     }
-
-    public Optional<NetworkConfig> getNetworkConfig() {
-        return networkConfig;
-    }
-
 }
