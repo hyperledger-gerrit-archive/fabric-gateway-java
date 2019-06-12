@@ -6,12 +6,14 @@
 
 package org.hyperledger.fabric.gateway;
 
-import org.hyperledger.fabric.gateway.impl.event.TransactionEventSource;
 import org.hyperledger.fabric.gateway.spi.Checkpointer;
+import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Peer;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.function.Consumer;
 
 /**
@@ -52,13 +54,6 @@ public interface Network {
 	Channel getChannel();
 
 	/**
-	 * Get an event source that can be used to listen for transaction events on this network.
-	 * @return A transaction event source.
-	 * @deprecated
-	 */
-	TransactionEventSource getCommitEventSource();
-
-	/**
 	 * Add a listener to receive block events from the network. Events are received in order and without duplication.
 	 * @param listener A block listener.
 	 * @return The block listener argument.
@@ -81,4 +76,19 @@ public interface Network {
 	 * @param listener A block listener.
 	 */
 	void removeBlockListener(Consumer<BlockEvent> listener);
+
+	/**
+	 * Add a listener to receive transaction commit and peer disconnect events for a set of peers.
+	 * @param listener A transaction commit listener.
+	 * @param peers The peers from which to receive events.
+	 * @param transactionId A transaction ID.
+	 * @return The transaction commit listener argument.
+	 */
+	CommitListener addCommitListener(CommitListener listener, Collection<Peer> peers, String transactionId);
+
+	/**
+	 * Removes a previously added transaction commit listener. Any associated checkpointer will be closed.
+	 * @param listener A block listener.
+	 */
+	void removeCommitListener(CommitListener listener);
 }
