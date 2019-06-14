@@ -6,13 +6,6 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.spi.Checkpointer;
-
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonString;
-import javax.json.JsonWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -31,6 +24,13 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+import javax.json.JsonWriter;
+
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
 
 public final class FileCheckpointer implements Checkpointer {
     private static final Set<OpenOption> OPEN_OPTIONS = Collections.unmodifiableSet(EnumSet.of(
@@ -175,8 +175,9 @@ public final class FileCheckpointer implements Checkpointer {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(file=" + filePath +
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(file=" + filePath +
                 ", blockNumber=" + blockNumber +
-                ", transactionIds=" + transactionIds + ")";
+                ", transactionIds=" + transactionIds + ')';
     }
 }

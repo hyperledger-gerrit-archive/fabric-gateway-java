@@ -6,6 +6,13 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+
 import org.hyperledger.fabric.gateway.Contract;
 import org.hyperledger.fabric.gateway.GatewayException;
 import org.hyperledger.fabric.gateway.Network;
@@ -25,13 +32,6 @@ import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 public final class NetworkImpl implements Network {
     private final Channel channel;
@@ -155,5 +155,15 @@ public final class NetworkImpl implements Network {
 
     public BlockEventSource getBlockSource() {
         return orderedBlockSource;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(name=" + channel.getName() +
+                ", channelBlockSource=" + channelBlockSource +
+                ", commitListenerSessions=" + commitListenerSessions +
+                ", orderedBlockSource=" + orderedBlockSource +
+                ", blockListenerSessions=" + blockListenerSessions + ')';
     }
 }
