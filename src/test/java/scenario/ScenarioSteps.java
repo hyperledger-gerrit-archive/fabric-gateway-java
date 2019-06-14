@@ -1,26 +1,5 @@
 package scenario;
 
-import cucumber.api.java8.En;
-import io.cucumber.datatable.DataTable;
-import org.hyperledger.fabric.gateway.Contract;
-import org.hyperledger.fabric.gateway.ContractEvent;
-import org.hyperledger.fabric.gateway.DefaultCheckpointers;
-import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
-import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
-import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.TestUtils;
-import org.hyperledger.fabric.gateway.Transaction;
-import org.hyperledger.fabric.gateway.Wallet;
-import org.hyperledger.fabric.gateway.spi.Checkpointer;
-import org.hyperledger.fabric.sdk.BlockEvent;
-
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonString;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +25,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+
+import cucumber.api.java8.En;
+import io.cucumber.datatable.DataTable;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.ContractEvent;
+import org.hyperledger.fabric.gateway.DefaultCheckpointers;
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
+import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
+import org.hyperledger.fabric.sdk.BlockEvent;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -59,6 +59,7 @@ public class ScenarioSteps implements En {
 	private Gateway.Builder gatewayBuilder = null;
 	private Gateway gateway = null;
 	private Network network = null;
+	private Contract contract = null;
 	private String response = null;
 	private Transaction transaction = null;
 	private Consumer<BlockEvent> blockListener = null;
@@ -223,11 +224,10 @@ public class ScenarioSteps implements En {
 
 		Given("I use the {word} network", (String networkName) -> network = gateway.getNetwork(networkName));
 
-		When("I prepare a(n) {word} transaction for contract {word}",
-				(String transactionName, String contractName) -> {
-					Contract contract = network.getContract(contractName);
-					transaction = contract.createTransaction(transactionName);
-				});
+		Given("I use the {word} contract", (String contractName) -> contract = network.getContract(contractName));
+
+		When("I prepare a(n) {word} transaction",
+				(String transactionName) -> transaction = contract.createTransaction(transactionName));
 
 		When("^I (submit|evaluate) the transaction with arguments (.+)$",
 				(String action, String argsJson) -> {
@@ -256,48 +256,41 @@ public class ScenarioSteps implements En {
 
 		When("I add a block listener with a file checkpointer", () -> {
 			clearBlockListener();
-			initFileCheckpointer();
-			blockListener = network.addBlockListener(checkpointer, blockEvents::add);
+			blockListener = network.addBlockListener(fileCheckpointer(), blockEvents::add);
 		});
 
 		When("I add a block listener with replay from block {int}", (Integer startBlock) -> {
 			clearBlockListener();
-			blockListener = network.addBlockListener(DefaultCheckpointers.replay(startBlock), blockEvents::add);
+			blockListener = network.addBlockListener(replayCheckpointer(startBlock), blockEvents::add);
 		});
 
 		When("I wait for a block event to be received", this::getBlockEvent);
 
-		When("I remove the block listener", () -> network.removeBlockListener(blockListener));
+		When("I remove the block listener", this::clearBlockListener);
 
-		When("I add a contract listener to contract {word} for events matching {string}",
-				(String contractName, String eventName) -> {
-					contractEvents.clear();
+		When("I add a contract listener for events matching {string}", (String eventName) -> {
+			clearContractListener();
+			Pattern eventNamePattern = Pattern.compile(eventName);
+			contractListener = contract.addContractListener(contractEvents::add, eventNamePattern);
+		});
+
+		When("I add a contract listener for events matching {string} with a file checkpointer",
+				(String eventName) -> {
+					clearContractListener();
 					Pattern eventNamePattern = Pattern.compile(eventName);
-					contractListener = network.getContract(contractName)
-							.addContractListener(contractEvents::add, eventNamePattern);
+					contractListener = contract.addContractListener(fileCheckpointer(), contractEvents::add, eventNamePattern);
 				});
 
-		When("I add a contract listener to contract {word} for events matching {string} with a file checkpointer",
-				(String contractName, String eventName) -> {
-					contractEvents.clear();
-					initFileCheckpointer();
+		When("I add a contract listener for events matching {string} with replay from block {int}",
+				(String eventName, Integer startBlock) -> {
+					clearContractListener();
 					Pattern eventNamePattern = Pattern.compile(eventName);
-					contractListener = network.getContract(contractName)
-							.addContractListener(checkpointer, contractEvents::add, eventNamePattern);
-				});
-
-		When("I add a contract listener to contract {word} for events matching {string} with replay from block {int}",
-				(String contractName, String eventName, Integer startBlock) -> {
-					contractEvents.clear();
-					Pattern eventNamePattern = Pattern.compile(eventName);
-					contractListener = network.getContract(contractName)
-							.addContractListener(DefaultCheckpointers.replay(startBlock), contractEvents::add, eventNamePattern);
+					contractListener = contract.addContractListener(replayCheckpointer(startBlock), contractEvents::add, eventNamePattern);
 				});
 
 		When("I wait for a contract event with payload {string} to be received", this::getContractEvent);
 
-		When("I remove the contract listener from contract {word}",
-				(String contractName) -> network.getContract(contractName).removeContractListener(contractListener));
+		When("I remove the contract listener", this::clearContractListener);
 
 		Then("a response should be received", () -> assertNotNull(response));
 
@@ -318,11 +311,13 @@ public class ScenarioSteps implements En {
 		Then("a contract event with payload {string} should be received", this::getContractEvent);
 	}
 
-	private Checkpointer initFileCheckpointer() throws IOException {
-		if (checkpointer != null) {
-			checkpointer.close();
-		}
-		checkpointer = DefaultCheckpointers.newFileCheckpointer(checkpointFile);
+	private Checkpointer fileCheckpointer() throws IOException {
+		checkpointer = DefaultCheckpointers.file(checkpointFile);
+		return checkpointer;
+	}
+
+	private Checkpointer replayCheckpointer(long startBlock) throws IOException {
+		checkpointer = DefaultCheckpointers.replay(startBlock);
 		return checkpointer;
 	}
 
@@ -367,7 +362,9 @@ public class ScenarioSteps implements En {
 			payloads.add(eventPayload);
 			return expectedPayload.equals(eventPayload);
 		});
-		assertNotNull("No contract events with payload \"" + expectedPayload + "\": " + payloads, matchingEvent);
+		String failMessage = "No contract events with payload \"" + expectedPayload + "\": " + payloads +
+				", network=" + network + ", contract=" + contract + ", checkpointer=" + checkpointer;
+		assertNotNull(failMessage, matchingEvent);
 		return matchingEvent;
 	}
 
@@ -458,7 +455,9 @@ public class ScenarioSteps implements En {
 
 	private BlockEvent getBlockEvent() throws InterruptedException {
 		BlockEvent event = blockEvents.poll(EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-		assertNotNull(event);
+		String failMessage = "No block events received: " +
+				"network=" + network + ", contract=" + contract + ", checkpointer=" + checkpointer;
+		assertNotNull(failMessage, event);
 		return event;
 	}
 
@@ -467,5 +466,12 @@ public class ScenarioSteps implements En {
 			network.removeBlockListener(blockListener);
 		}
 		blockEvents.clear();
+	}
+
+	private void clearContractListener() {
+		if (contractListener != null) {
+			contract.removeContractListener(contractListener);
+		}
+		contractEvents.clear();
 	}
 }
