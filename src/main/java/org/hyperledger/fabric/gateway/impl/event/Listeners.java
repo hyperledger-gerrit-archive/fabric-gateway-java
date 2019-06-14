@@ -6,13 +6,6 @@
 
 package org.hyperledger.fabric.gateway.impl.event;
 
-import org.hyperledger.fabric.gateway.ContractEvent;
-import org.hyperledger.fabric.gateway.spi.Checkpointer;
-import org.hyperledger.fabric.gateway.spi.CommitListener;
-import org.hyperledger.fabric.sdk.BlockEvent;
-import org.hyperledger.fabric.sdk.BlockInfo;
-import org.hyperledger.fabric.sdk.Peer;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collection;
@@ -22,6 +15,13 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
+
+import org.hyperledger.fabric.gateway.ContractEvent;
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
+import org.hyperledger.fabric.gateway.spi.CommitListener;
+import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.BlockInfo;
+import org.hyperledger.fabric.sdk.Peer;
 
 public final class Listeners {
     public static Consumer<BlockEvent> fromTransaction(Consumer<BlockEvent.TransactionEvent> listener) {
@@ -54,8 +54,12 @@ public final class Listeners {
                     }
 
                     if (eventBlockNumber == checkpointBlockNumber) {
+                        System.out.println("Accept checkpoint block number " + eventBlockNumber);
                         listener.accept(blockEvent); // Process event before checkpointing
                         checkpointer.setBlockNumber(eventBlockNumber + 1);
+                    } else {
+                        System.out.println("Reject checkpoint block number " + eventBlockNumber +
+                                ". Expected block number " + checkpointBlockNumber);
                     }
                 }
             } catch (IOException e) {
@@ -70,8 +74,12 @@ public final class Listeners {
             try {
                 synchronized (checkpointer) {
                     if (!checkpointer.getTransactionIds().contains(transactionId)) {
+                        System.out.println("Accept checkpoint transaction ID " + transactionId);
                         listener.accept(transactionEvent); // Process event before checkpointing
                         checkpointer.addTransactionId(transactionId);
+                    } else {
+                        System.out.println("Reject checkpoint transaction ID " + transactionId +
+                                ". Already seen " + checkpointer.getTransactionIds());
                     }
                 }
             } catch (IOException e) {
