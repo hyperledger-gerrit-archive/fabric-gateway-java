@@ -50,7 +50,6 @@ Feature: Event listening
 		And I add a block listener with a file checkpointer
 	 	Then a block event should be received
 
-
 	Scenario: Replay of contract events
 		Given I have a gateway as user User1 using the tls connection profile
 		And I connect the gateway

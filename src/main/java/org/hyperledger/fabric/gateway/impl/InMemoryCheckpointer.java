@@ -6,11 +6,11 @@
 
 package org.hyperledger.fabric.gateway.impl;
 
-import org.hyperledger.fabric.gateway.spi.Checkpointer;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
 
 /**
  * Transient in-memory checkpointer implementation with no persistent storage. Can be used for event replay.
@@ -53,7 +53,8 @@ public class InMemoryCheckpointer implements Checkpointer {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(blockNumber=" + blockNumber +
-                ", transactionIds=" + transactionIds + ")";
+        return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
+                "(blockNumber=" + blockNumber +
+                ", transactionIds=" + transactionIds + ')';
     }
 }

@@ -1,26 +1,5 @@
 package scenario;
 
-import cucumber.api.java8.En;
-import io.cucumber.datatable.DataTable;
-import org.hyperledger.fabric.gateway.Contract;
-import org.hyperledger.fabric.gateway.ContractEvent;
-import org.hyperledger.fabric.gateway.DefaultCheckpointers;
-import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
-import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
-import org.hyperledger.fabric.gateway.Gateway;
-import org.hyperledger.fabric.gateway.GatewayException;
-import org.hyperledger.fabric.gateway.Network;
-import org.hyperledger.fabric.gateway.TestUtils;
-import org.hyperledger.fabric.gateway.Transaction;
-import org.hyperledger.fabric.gateway.Wallet;
-import org.hyperledger.fabric.gateway.spi.Checkpointer;
-import org.hyperledger.fabric.sdk.BlockEvent;
-
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonString;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -41,11 +20,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+
+import cucumber.api.java8.En;
+import io.cucumber.datatable.DataTable;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.ContractEvent;
+import org.hyperledger.fabric.gateway.DefaultCheckpointers;
+import org.hyperledger.fabric.gateway.DefaultCommitHandlers;
+import org.hyperledger.fabric.gateway.DefaultQueryHandlers;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.GatewayException;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.TestUtils;
+import org.hyperledger.fabric.gateway.Transaction;
+import org.hyperledger.fabric.gateway.Wallet;
+import org.hyperledger.fabric.gateway.spi.Checkpointer;
+import org.hyperledger.fabric.sdk.BlockEvent;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -256,18 +257,17 @@ public class ScenarioSteps implements En {
 
 		When("I add a block listener with a file checkpointer", () -> {
 			clearBlockListener();
-			initFileCheckpointer();
-			blockListener = network.addBlockListener(checkpointer, blockEvents::add);
+			blockListener = network.addBlockListener(fileCheckpointer(), blockEvents::add);
 		});
 
 		When("I add a block listener with replay from block {int}", (Integer startBlock) -> {
 			clearBlockListener();
-			blockListener = network.addBlockListener(DefaultCheckpointers.replay(startBlock), blockEvents::add);
+			blockListener = network.addBlockListener(replayCheckpointer(startBlock), blockEvents::add);
 		});
 
 		When("I wait for a block event to be received", this::getBlockEvent);
 
-		When("I remove the block listener", () -> network.removeBlockListener(blockListener));
+		When("I remove the block listener", this::clearBlockListener);
 
 		When("I add a contract listener to contract {word} for events matching {string}",
 				(String contractName, String eventName) -> {
@@ -280,10 +280,9 @@ public class ScenarioSteps implements En {
 		When("I add a contract listener to contract {word} for events matching {string} with a file checkpointer",
 				(String contractName, String eventName) -> {
 					contractEvents.clear();
-					initFileCheckpointer();
 					Pattern eventNamePattern = Pattern.compile(eventName);
 					contractListener = network.getContract(contractName)
-							.addContractListener(checkpointer, contractEvents::add, eventNamePattern);
+							.addContractListener(fileCheckpointer(), contractEvents::add, eventNamePattern);
 				});
 
 		When("I add a contract listener to contract {word} for events matching {string} with replay from block {int}",
@@ -291,7 +290,7 @@ public class ScenarioSteps implements En {
 					contractEvents.clear();
 					Pattern eventNamePattern = Pattern.compile(eventName);
 					contractListener = network.getContract(contractName)
-							.addContractListener(DefaultCheckpointers.replay(startBlock), contractEvents::add, eventNamePattern);
+							.addContractListener(replayCheckpointer(startBlock), contractEvents::add, eventNamePattern);
 				});
 
 		When("I wait for a contract event with payload {string} to be received", this::getContractEvent);
@@ -318,11 +317,19 @@ public class ScenarioSteps implements En {
 		Then("a contract event with payload {string} should be received", this::getContractEvent);
 	}
 
-	private Checkpointer initFileCheckpointer() throws IOException {
+	private Checkpointer fileCheckpointer() throws Exception {
+		return newCheckpointer(() -> DefaultCheckpointers.file(checkpointFile));
+	}
+
+	private Checkpointer replayCheckpointer(long startBlock) throws Exception {
+		return newCheckpointer(() -> DefaultCheckpointers.replay(startBlock));
+	}
+
+	private Checkpointer newCheckpointer(Callable<Checkpointer> factoryFn) throws Exception {
 		if (checkpointer != null) {
 			checkpointer.close();
 		}
-		checkpointer = DefaultCheckpointers.newFileCheckpointer(checkpointFile);
+		checkpointer = factoryFn.call();
 		return checkpointer;
 	}
 
@@ -367,7 +374,9 @@ public class ScenarioSteps implements En {
 			payloads.add(eventPayload);
 			return expectedPayload.equals(eventPayload);
 		});
-		assertNotNull("No contract events with payload \"" + expectedPayload + "\": " + payloads, matchingEvent);
+		String failMessage = "No contract events with payload \"" + expectedPayload + "\": " + payloads +
+				", network=" + network + ", checkpointer=" + checkpointer;
+		assertNotNull(failMessage, matchingEvent);
 		return matchingEvent;
 	}
 
