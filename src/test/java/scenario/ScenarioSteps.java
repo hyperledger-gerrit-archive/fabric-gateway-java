@@ -72,6 +72,12 @@ public class ScenarioSteps implements En {
     public ScenarioSteps() throws IOException {
         checkpointFile = TestUtils.getInstance().getUnusedFilePath();
 
+        After(() -> {
+            if (gateway != null) {
+                gateway.close();
+            }
+        });
+
         Given("I have deployed a {word} Fabric network", (String tlsType) -> {
             // tlsType is either "tls" or "non-tls"
             fabricNetworkType = tlsType;

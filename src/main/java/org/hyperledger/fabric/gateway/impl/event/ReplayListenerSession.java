@@ -73,13 +73,12 @@ public final class ReplayListenerSession implements ListenerSession {
     public void close() {
         blockSource.close();
         gateway.close();
-        channel.shutdown(false);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + '@' + System.identityHashCode(this) +
-                "(channel=" + channel.getName() +
+                "(channel=" + channel +
                 ", blockSource=" + blockSource + ')';
     }
 }
