@@ -73,7 +73,6 @@ public final class ReplayListenerSession implements ListenerSession {
     public void close() {
         blockSource.close();
         gateway.close();
-        channel.shutdown(false);
     }
 
     @Override
