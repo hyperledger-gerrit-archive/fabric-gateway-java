@@ -89,35 +89,40 @@ public final class TransactionImpl implements Transaction {
         try {
             TransactionProposalRequest request = newProposalRequest(args);
             Collection<ProposalResponse> proposalResponses = sendTransactionProposal(request);
-
             Collection<ProposalResponse> validResponses = validatePeerResponses(proposalResponses);
-            ProposalResponse proposalResponse = validResponses.iterator().next();
-            byte[] result = proposalResponse.getChaincodeActionResponsePayload();
-            String transactionId = proposalResponse.getTransactionID();
-
-            Channel.TransactionOptions transactionOptions = Channel.TransactionOptions.createTransactionOptions()
-                    .nOfEvents(Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
-
-            CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
-            commitHandler.startListening();
-
-            try {
-                channel.sendTransaction(validResponses, transactionOptions).get(60, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                commitHandler.cancelListening();
-                throw e;
-            } catch (Exception e) {
-                commitHandler.cancelListening();
-                throw new ContractException("Failed to send transaction to the orderer", e);
-            }
-
-            commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
-
+            
+            byte[] result = sendResponsesToOrderer(validResponses);
             return result;
         } catch (InvalidArgumentException | ProposalException | ServiceDiscoveryException e) {
             throw new GatewayRuntimeException(e);
         }
     }
+
+	private byte[] sendResponsesToOrderer(Collection<ProposalResponse> validResponses)
+			throws InvalidArgumentException, TimeoutException, ContractException, InterruptedException {
+		ProposalResponse proposalResponse = validResponses.iterator().next();
+		byte[] result = proposalResponse.getChaincodeActionResponsePayload();
+		String transactionId = proposalResponse.getTransactionID();
+
+		Channel.TransactionOptions transactionOptions = Channel.TransactionOptions.createTransactionOptions()
+		        .nOfEvents(Channel.NOfEvents.createNoEvents()); // Disable default commit wait behaviour
+
+		CommitHandler commitHandler = commitHandlerFactory.create(transactionId, network);
+		commitHandler.startListening();
+
+		try {
+		    channel.sendTransaction(validResponses, transactionOptions).get(60, TimeUnit.SECONDS);
+		} catch (TimeoutException e) {
+		    commitHandler.cancelListening();
+		    throw e;
+		} catch (Exception e) {
+		    commitHandler.cancelListening();
+		    throw new ContractException("Failed to send transaction to the orderer", e);
+		}
+
+		commitHandler.waitForEvents(commitTimeout.getTime(), commitTimeout.getTimeUnit());
+		return result;
+	}
 
     private TransactionProposalRequest newProposalRequest(String[] args) {
         TransactionProposalRequest request = network.getGateway().getClient().newTransactionProposalRequest();
