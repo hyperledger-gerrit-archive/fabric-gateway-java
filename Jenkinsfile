@@ -49,7 +49,7 @@ timestamps { // set the timestamps on the jenkins console
 
     // Publish jar files from merge job
     if (env.JOB_TYPE == "merge") {
-      publishJar()
+      // publishJar() - disable publication of jars to nexus.hyperledger.org - will be published to sonatype.org
       apiDocs()
    } else {
       echo "------> Don't publish jar files from VERIFY job"
