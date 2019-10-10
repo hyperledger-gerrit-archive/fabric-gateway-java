@@ -1,0 +1,7 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+2: Mark S. Lewis <Mark.S.Lewis@outlook.com>
+Submitted-by: Mark S. Lewis <Mark.S.Lewis@outlook.com>
+Submitted-at: Thu, 10 Oct 2019 14:53:27 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/c/fabric-gateway-java/+/33929
+Project: fabric-gateway-java
+Branch: refs/heads/release-1.4
