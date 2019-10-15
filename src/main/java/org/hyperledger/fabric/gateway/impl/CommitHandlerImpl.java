@@ -13,6 +13,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.hyperledger.fabric.gateway.ContractException;
 import org.hyperledger.fabric.gateway.Network;
@@ -20,6 +22,7 @@ import org.hyperledger.fabric.gateway.spi.CommitHandler;
 import org.hyperledger.fabric.gateway.spi.CommitListener;
 import org.hyperledger.fabric.gateway.spi.PeerDisconnectEvent;
 import org.hyperledger.fabric.sdk.BlockEvent;
+import org.hyperledger.fabric.sdk.BlockInfo;
 import org.hyperledger.fabric.sdk.Peer;
 
 public final class CommitHandlerImpl implements CommitHandler {
@@ -100,7 +103,10 @@ public final class CommitHandlerImpl implements CommitHandler {
             processStrategyResult(result);
         } else {
             String peerName = event.getPeer().getName();
-            fail(new ContractException("Transaction commit was rejected by peer " + peerName));
+            String responseMessages = StreamSupport.stream(event.getTransactionActionInfos().spliterator(), false)
+                    .map(BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo::getResponseMessage)
+                    .collect(Collectors.joining("\n\t"));
+            fail(new ContractException("Transaction commit was rejected by peer " + peerName + ": " + responseMessages));
         }
     }
 
